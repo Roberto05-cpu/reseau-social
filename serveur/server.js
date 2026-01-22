@@ -15,6 +15,7 @@ app.use(morgan('dev'))
 
 // routes
 app.use('/api/users', require('./Routes/userRoute'))
+app.use('/api/posts', require('./Routes/postRoute'))
 
 // connecter la base de donnees
 connectDB()

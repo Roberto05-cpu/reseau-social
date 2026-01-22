@@ -151,4 +151,223 @@ const getInfoByIdUserController = async (req,res) => {
     }
 }
 
-module.exports = {createUserController, loginUserController, getAllUsersController, getInfoByIdUserController}
+const updateUserController = async (req,res) => {
+    try {
+       const userId = req.params.id
+       const {name, bio} = req.body 
+
+       if (!userId) {
+           return res.status(404).send({
+             success: false,
+             message: "Faut entrer l'id de l'utilisateur",
+           });
+        }
+
+       // recherche de l'utilisateur
+       const user = await userModel.findById(userId)
+       if (!user) {
+           return res.status(404).send({
+             success: false,
+             message: "Utilisateur introuvable",
+           });
+        }
+
+        // mise a jour
+        if (name) user.name = name
+        if (bio) user.bio = bio
+
+        await user.save()
+
+        res.status(201).send({
+            success: true,
+            message: "Profil utilisateur mis a jour",
+            user
+        })
+    } catch (error) {
+        console.log(error.message.bgRed.white)
+        res.status(500).send({
+            success: false,
+            message: "Erreur lors de la mise a jour des infos de l'utilisateur. API",
+        })
+    }
+}
+
+const deleteUserController = async (req,res) => {
+    try {
+        const userId = req.params.id
+        if (!userId) {
+           return res.status(404).send({
+             success: false,
+             message: "Faut entrer l'id de l'utilisateur",
+           });
+        }
+
+        // recherche et suppression
+        await userModel.findByIdAndDelete(userId)
+
+        res.status(201).send({
+            success: true,
+            message: "Profil Utilisateur supprimé"
+        })
+    } catch (error) {
+        console.log(error.message.bgRed.white)
+        res.status(500).send({
+            success: false,
+            message: "Erreur lors de la suppression de l'utilisateur. API",
+        })
+    }
+}
+
+// s'abonner a un utilisateur
+const followUserController = async (req,res) => {
+    try {
+        const userIdToFollow = req.params.id
+        const currentUserId = req.user.id
+
+        // recherche de l'utilisateur a suivre
+        const userToFollow = await userModel.findById(userIdToFollow)
+        if (!userToFollow) {
+            return res.status(404).send({
+                success: false,
+                message: "Utilisateur a suivre introuvable",
+            });
+        }
+
+        // recherche de l'utilisateur courant
+        const currentUser = await userModel.findById(currentUserId)
+        if (!currentUser) {
+            return res.status(404).send({
+                success: false,
+                message: "Utilisateur courant introuvable",
+            });
+        }
+
+        // verification si l'utilisateur est deja suivi
+        const isAlreadyFollowing = currentUser.following.includes(userIdToFollow)
+        if (isAlreadyFollowing) {
+            return res.status(400).send({
+                success: false,
+                message: "Vous suivez deja cet utilisateur",
+            });
+        }
+
+        // ajout de l'utilisateur dans la liste des abonnements
+        currentUser.following.push(userIdToFollow)
+        await currentUser.save()
+
+        // ajout de l'utilisateur dans la liste des abonnés
+        userToFollow.followers.push(currentUserId)
+        await userToFollow.save()
+
+        res.status(201).send({
+            success: true,
+            message: "Abonnement reussi",
+            userToFollow
+        })
+    } catch (error) {
+        console.log(error.message.bgRed.white)
+        res.status(500).send({
+            success: false,
+            message: "Erreur lors de l'abonnement de l'utilisateur. API",
+        })
+    }
+}
+
+// se desabonner d'un utilisateur
+const unfollowUserController = async (req,res) => {
+    try {
+        const userIdToUnfollow = req.params.id
+        const currentUserId = req.user._id
+
+        // recherche de l'utilisateur suivi
+        const userToUnfollow = await userModel.findById(userIdToUnfollow)
+        if (!userToUnfollow) {
+            return res.status(404).send({
+                success: false,
+                message: "Utilisateur suivi introuvable",
+            });
+        }
+
+        // recherche de l'utilisateur courant
+        const currentUser = await userModel.findById(currentUserId)
+        if (!currentUser) {
+            return res.status(404).send({
+                success: false,
+                message: "Utilisateur courant introuvable",
+            });
+        }
+
+        // verification si l'utilisateur est deja suivi
+        const isAlreadyFollowing = currentUser.following.includes(userIdToUnfollow)
+        if (!isAlreadyFollowing) {
+            return res.status(400).send({
+                success: false,
+                message: "Vous ne suivez pas cet utilisateur",
+            });
+        }
+
+        // suppression de l'utilisateur dans la liste des abonnements
+        currentUser.following = currentUser.following.filter(id => id.toString() !== userIdToUnfollow)
+        await currentUser.save()
+
+        // suppression de l'utilisateur dans la liste des abonnés
+        userToUnfollow.followers = userToUnfollow.followers.filter(id => id.toString() !== currentUserId)
+        await userToUnfollow.save()
+
+        res.status(201).send({
+            success: true,
+            message: "Desabonnement reussi",
+            userToUnfollow
+        })
+    } catch (error) {
+        console.log(error.message.bgRed.white)
+        res.status(500).send({
+            success: false,
+            message: "Erreur lors du desabonnement de l'utilisateur. API",
+        })
+    }
+}
+
+// uploader une image de profil
+const uploadAvatarController = async (req,res) => {
+    console.log("REQ BODY:", req.body);
+console.log("REQ FILE:", req.file);
+
+    try {
+        const userId = req.params.id;
+        if (userId !== req.user._id.toString()) {
+            return res.status(403).send({
+                success: false,
+                message: "Vous n'êtes pas autorisé à modifier ce profil",
+            });
+        }
+        if (!req.file) {
+            return res.status(400).send({
+                success: false,
+                message: "Aucun fichier téléchargé",
+            });
+        }
+
+        // mise a jour de l'avatar de l'utilisateur
+        const avatarPath = req.file ? `/upload/images/profils/${req.file.filename}` : "";
+        const user = await userModel.findByIdAndUpdate(
+            userId,
+            { avatar: avatarPath },
+            { new: true }
+        ).select("-password")
+
+        res.status(201).send({
+            success: true,
+            message: "Image de profil téléchargée avec succès",
+            user
+        })
+    } catch (error) {
+        console.log(error.message.bgRed.white)
+        res.status(500).send({
+            success: false,
+            message: "Erreur lors du téléchargement de l'image de profil. API",
+        })
+    }
+}
+
+module.exports = {createUserController, loginUserController, getAllUsersController, getInfoByIdUserController, deleteUserController, updateUserController, followUserController, unfollowUserController, uploadAvatarController}

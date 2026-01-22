@@ -5,6 +5,10 @@
 ## Fonctionnalités (Phase 1) Backend
 - Authentification (JWT)
 - recuperation de tous les users et infos d'un user
+- ajout des controllers pour follow, unfollow un user
+- ajout de la logique d'upload d'images
+-ajout du model d'un post
+-ajout des premiers controllers pour un post (publication)
 
 
 ## Stack
