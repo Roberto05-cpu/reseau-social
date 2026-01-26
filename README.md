@@ -10,6 +10,9 @@
 -ajout du model d'un post
 -ajout des premiers controllers pour un post (publication)
 
+## Frontend
+-pages de login et inscription
+
 
 ## Stack
 - MongoDB
