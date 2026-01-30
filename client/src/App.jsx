@@ -7,6 +7,7 @@ import Reel from "./Pages/Reel";
 import MyPost from "./Pages/MyPost";
 import Settings from "./Pages/Settings";
 import PrivateRoutes from "./Components/PrivateRoutes";
+import Friends from "./Pages/Friends";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
             <Route path="reel" element={<Reel />} />
             <Route path="my-post" element={<MyPost />} />
             <Route path="setting" element={<Settings />} />
+            <Route path="friends" element={<Friends />} />
           </Route>
         </Route>
       </Routes>
