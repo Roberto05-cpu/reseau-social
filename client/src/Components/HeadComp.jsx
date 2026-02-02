@@ -1,7 +1,8 @@
 import React from "react";
 import { Bell, MessageCircle, Search } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const HeadComp = () => {
+const HeadComp = ({setOpenModal}) => {
   return (
     <div className="flex items-center justify-between">
       <div className="relative">
@@ -16,9 +17,9 @@ const HeadComp = () => {
         />
       </div>
       <div className="flex gap-4 items-center">
-        <Bell size={18} />
-        <MessageCircle size={18} />
-        <button className="py-2 px-5 bg-red-400 text-white font-bold rounded-full">
+        <Link to="/home/notifications"><Bell size={18} /></Link>
+        <Link to="/home/messages"><MessageCircle size={18} /></Link>
+        <button onClick={() => setOpenModal(true)} className="py-2 px-5 bg-red-400 text-white font-bold rounded-full">
           + Creer un nouveau post
         </button>
       </div>

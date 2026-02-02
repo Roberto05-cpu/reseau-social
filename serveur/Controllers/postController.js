@@ -1,21 +1,33 @@
 const postModel = require("../Models/postModel");
+const userModel = require("../models/userModel");
 
 // creer un post
 const createPostController = async (req, res) => {
   try {
     const { message } = req.body;
-    if (!message) {
+    if (!message && !req.file) {
       return res.status(400).send({
         success: false,
-        message: "Le message est obligatoire",
+        message: "Le message ou le media est obligatoire",
       });
+    }
+
+    let picture = "";
+    let video = "";
+
+    if (req.file) {
+      if (req.file.mimetype.startsWith("image")) {
+        picture = `/upload/images/posts/${req.file.filename}`;
+      } else if (req.file.mimetype.startsWith("video")) {
+        video = `/upload/videos/${req.file.filename}`;
+      }
     }
 
     const newPost = new postModel({
       posterId: req.user._id,
       message,
-      picture: req.body.picture,
-      video: req.body.video,
+      picture,
+      video,
       likers: [],
       comments: [],
     });
@@ -40,6 +52,7 @@ const getAllPostsController = async (req, res) => {
     const posts = await postModel
       .find({})
       .populate("posterId", "-password")
+      .populate("comments.commenterId", "name avatar")
       .sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
@@ -238,11 +251,13 @@ const commentPostController = async (req, res) => {
     await post.save();
 
     await post.populate("comments.commenterId", "name avatar");
+    // récupérer le commentaire ajouté (le dernier) déjà peuplé
+    const populatedComment = post.comments[post.comments.length - 1];
 
     res.status(200).send({
       success: true,
       message: "Commentaire ajouté avec succès",
-      comment: newComment,
+      comment: populatedComment,
       post,
     });
   } catch (error) {

@@ -139,10 +139,18 @@ const getAllUsersController = async (req, res) => {
 };
 
 const getInfoByIdUserController = async (req, res) => {
-  const userId = req.params.id;
-
   try {
-    // recherche user par son id
+    // utiliser l'utilisateur connecté (authMiddleware remplit req.user)
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).send({
+        success: false,
+        message: "Utilisateur non authentifié",
+      });
+    }
+
+    // récupérer les informations utilisateur (sans le password)
     const user = await userModel.findById(userId).select("-password");
     if (!user) {
       return res.status(404).send({
@@ -151,12 +159,18 @@ const getInfoByIdUserController = async (req, res) => {
       });
     }
 
-    // reponse
+    // récupérer tous les posts de l'utilisateur connecté
+    const userPosts = await postModel
+      .find({ posterId: userId })
+      .populate("posterId", "name avatar")
+      .sort({ createdAt: -1 });
+
+    // réponse
     res.status(200).send({
       success: true,
-      message: "Informations de l'utilisateur récupérées avec succès",
+      message: "Informations et posts de l'utilisateur récupérés avec succès",
       user,
-      userPosts
+      userPosts,
     });
   } catch (error) {
     console.log(error.message.bgRed.white);
@@ -171,7 +185,7 @@ const getInfoByIdUserController = async (req, res) => {
 const updateUserController = async (req, res) => {
   try {
     const userId = req.params.id;
-    const { name, bio } = req.body;
+    const { bio } = req.body;
 
     if (!userId) {
       return res.status(404).send({
@@ -190,7 +204,6 @@ const updateUserController = async (req, res) => {
     }
 
     // mise a jour
-    if (name) user.name = name;
     if (bio) user.bio = bio;
 
     await user.save();
@@ -280,6 +293,7 @@ const followUserController = async (req, res) => {
       success: true,
       message: "Abonnement reussi",
       userToFollow,
+      currentUser
     });
   } catch (error) {
     console.log(error.message.bgRed.white);

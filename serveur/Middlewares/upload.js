@@ -7,7 +7,7 @@ const storage = multer.diskStorage({
     if (file.mimetype.startsWith("image")) {
       if (file.fieldname === "avatar") {
         cb(null, "upload/images/profils");
-      } else if (file.fieldname === "picture") {
+      } else if (file.fieldname === "media") {
         cb(null, "upload/images/posts");
       } else {
         cb(new Error("champ image non reconnu"));

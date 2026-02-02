@@ -6,7 +6,7 @@ const upload = require("../Middlewares/upload");
 const router = express.Router();
 
 // creer un post
-router.post('/', authMiddleware, upload.fields([{ name: 'picture', maxCount: 1 }, { name: 'video', maxCount: 1 }]), createPostController)
+router.post('/', authMiddleware, upload.single('media'), createPostController)
 
 // recuperer tous les posts
 router.get('/', authMiddleware, getAllPostsController)

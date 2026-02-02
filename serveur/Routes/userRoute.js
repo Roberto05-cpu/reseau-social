@@ -15,7 +15,7 @@ router.post('/login', loginUserController)
 router.get('/', authMiddleware, getAllUsersController)
 
 // infos d'un utilisateur connecte
-router.get('/get-info-user/:id', authMiddleware, getInfoByIdUserController)
+router.get('/get-info-user', authMiddleware, getInfoByIdUserController)
 
 // mettre a jour le profil d'un utilisateur
 router.put('/:id', authMiddleware, updateUserController)
@@ -30,8 +30,11 @@ router.patch('/follow/:id', authMiddleware, followUserController)
 router.patch('/unfollow/:id', authMiddleware, unfollowUserController)
 
 // uploader une image de profil
-router.put('/avatar/:id',  (req,res,next)=>{
-    console.log("La route upload-avatar est appelée !");
-    next() }, authMiddleware, upload.single('avatar'), uploadAvatarController)
+router.put('/avatar/:id', authMiddleware, upload.single('avatar'),(req, res, next) => {
+      console.log("La route upload-avatar est appelée !");
+      console.log("req.body:", req.body);
+      console.log("req.file:", req.file);
+      next();
+  }, uploadAvatarController)
 
 module.exports = router

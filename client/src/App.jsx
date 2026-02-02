@@ -8,6 +8,8 @@ import MyPost from "./Pages/MyPost";
 import Settings from "./Pages/Settings";
 import PrivateRoutes from "./Components/PrivateRoutes";
 import Friends from "./Pages/Friends";
+import Messages from "./Pages/Messages";
+import Notifications from "./Pages/Notifications";
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
             <Route path="my-post" element={<MyPost />} />
             <Route path="setting" element={<Settings />} />
             <Route path="friends" element={<Friends />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
         </Route>
       </Routes>
