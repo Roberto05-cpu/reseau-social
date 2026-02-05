@@ -1,3 +1,4 @@
+const notifModel = require("../Models/notifModel");
 const postModel = require("../Models/postModel");
 const userModel = require("../models/userModel");
 
@@ -170,6 +171,15 @@ const likePostController = async (req, res) => {
       { new: true }
     );
 
+    if (post.posterId.toString() !== userId.toString()) {
+      await notifModel.create({
+        senderId: userId,
+        receiverId: post.posterId,
+        type: "like",
+        postId: post._id
+      })
+    }
+
     res.status(200).send({
       success: true,
       message: "Post liké avec succès ",
@@ -253,6 +263,16 @@ const commentPostController = async (req, res) => {
     await post.populate("comments.commenterId", "name avatar");
     // récupérer le commentaire ajouté (le dernier) déjà peuplé
     const populatedComment = post.comments[post.comments.length - 1];
+
+    // notification
+    if (post.posterId.toString() !== req.user._id.toString()) {
+      await notifModel.create({
+        senderId: req.user._id,
+        receiverId: post.posterId,
+        type: "comment",
+        postId: post._id
+      })
+    }
 
     res.status(200).send({
       success: true,

@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { signUpErrors, signInErrors } = require("../Utils/errors");
 const postModel = require("../Models/postModel");
+const notifModel = require("../Models/notifModel");
 require("colors");
 
 const createUserController = async (req, res) => {
@@ -97,7 +98,7 @@ const loginUserController = async (req, res) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "7d",
-      }
+      },
     );
     user.password = undefined;
 
@@ -123,7 +124,7 @@ const getAllUsersController = async (req, res) => {
   try {
     // recuperer tous les users
     const users = await userModel.find().select("-password");
-    const selectUsers = users.filter(user => user.id !== req.user.id)
+    const selectUsers = users.filter((user) => user.id !== req.user.id);
     res.status(200).send({
       success: true,
       message: "Tous les utilisateurs récupérés avec succès",
@@ -254,6 +255,14 @@ const followUserController = async (req, res) => {
     const userIdToFollow = req.params.id;
     const currentUserId = req.user.id;
 
+    // verification
+    if (userIdToFollow === currentUserId.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "Vous ne pouvez pas vous suivre vous-même",
+      });
+    }
+
     // recherche de l'utilisateur a suivre
     const userToFollow = await userModel.findById(userIdToFollow);
     if (!userToFollow) {
@@ -289,11 +298,35 @@ const followUserController = async (req, res) => {
     userToFollow.followers.push(currentUserId);
     await userToFollow.save();
 
+    await notifModel.create({
+      senderId: currentUserId,
+      receiverId: userIdToFollow,
+      type: "follow",
+    });
+
+    // après avoir sauvegardé les deux utilisateurs et créé la notif
+    if (onlineUsers.has(userIdToFollow.toString())) {
+      const socketId = onlineUsers.get(userIdToFollow.toString());
+      io.to(socketId).emit("updateFollowers", {
+        userId: userIdToFollow,
+        followersCount: userToFollow.followers.length,
+      });
+    }
+
+    // éventuellement mettre à jour aussi le user courant (following)
+    if (onlineUsers.has(currentUserId.toString())) {
+      const socketId = onlineUsers.get(currentUserId.toString());
+      io.to(socketId).emit("updateFollowing", {
+        userId: currentUserId,
+        followingCount: currentUser.following.length,
+      });
+    }
+
     res.status(201).send({
       success: true,
       message: "Abonnement reussi",
       userToFollow,
-      currentUser
+      currentUser,
     });
   } catch (error) {
     console.log(error.message.bgRed.white);
@@ -339,19 +372,20 @@ const unfollowUserController = async (req, res) => {
 
     // suppression de l'utilisateur dans la liste des abonnements
     currentUser.following = currentUser.following.filter(
-      (id) => id.toString() !== userIdToUnfollow
+      (id) => id.toString() !== userIdToUnfollow,
     );
     await currentUser.save();
 
     // suppression de l'utilisateur dans la liste des abonnés
     userToUnfollow.followers = userToUnfollow.followers.filter(
-      (id) => id.toString() !== currentUserId
+      (id) => id.toString() !== currentUserId,
     );
     await userToUnfollow.save();
 
     res.status(201).send({
       success: true,
       message: "Desabonnement reussi",
+      currentUser,
       userToUnfollow,
     });
   } catch (error) {

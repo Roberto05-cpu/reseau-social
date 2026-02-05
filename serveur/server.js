@@ -5,6 +5,8 @@ const morgan = require('morgan')
 const dotenv = require('dotenv')
 const { connectDB } = require('./config/db')
 const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 
 dotenv.config();
 
@@ -22,6 +24,7 @@ app.use(
 // routes
 app.use('/api/users', require('./Routes/userRoute'))
 app.use('/api/posts', require('./Routes/postRoute'))
+app.use('/api/notifs', require('./Routes/notifRoute'))
 
 // connecter la base de donnees
 connectDB()
@@ -30,8 +33,44 @@ app.get('/', (req, res) => {
   res.send('🚀 API de reseau social en marche');
 });
 
-const PORT = process.env.PORT
+// 🔥 SOCKET.IO — BASE
+const server = http.createServer(app);
 
-app.listen(PORT, () => {
-    console.log(`serveur en marche sur le port ${PORT}}`.bgWhite)
-})
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // frontend
+    credentials: true,
+  },
+});
+
+// rendre io accessible partout
+global.io = io;
+
+// map pour stocker users en ligne
+global.onlineUsers = new Map();
+
+// connexion socket
+io.on("connection", (socket) => {
+  console.log("🟢 Socket connecté :", socket.id);
+
+  socket.on("join", (userId) => {
+    onlineUsers.set(userId.toString(), socket.id);
+    console.log("👤 User en ligne :", userId);
+  });
+
+  socket.on("disconnect", () => {
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        console.log("🔴 User déconnecté :", userId);
+        break;
+      }
+    }
+  });
+});
+
+// démarrage serveur
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 Serveur + Socket en marche sur le port ${PORT}`.bgGreen);
+});

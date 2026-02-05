@@ -18,14 +18,36 @@ import axios from "axios";
 import PostModel from "../Components/PostModel";
 import defautuser from "../assets/defautuser.png";
 import { ReseauContext } from "../Context/ReseauContext";
+import { io } from "socket.io-client";
+
+let socket
 
 const Feed = () => {
 
   const {allPosts, getAllPosts, friends, getFriends, setOpenModal, openModal, updatePostInState, removePostFromState} = useContext(ReseauContext);
 
+  const user = JSON.parse(sessionStorage.getItem("user"));
+
   useEffect(() => {
     getAllPosts();
     getFriends();
+
+    if (!user) return;
+
+    // connecter au serveur Socket.IO
+    socket = io("http://localhost:5000");
+
+    // dire au serveur quel user est connecté
+    socket.emit("join", user._id);
+
+    // optionnel : écouter des événements temps réel
+    socket.on("connect", () => {
+      console.log("🔗 Connecté au serveur Socket.IO, id :", socket.id);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (
@@ -50,7 +72,7 @@ const Feed = () => {
                       ? `http://localhost:5000${friend.avatar}`
                       : defautuser
                   }
-                  className="w-26 h-26 rounded-[100%] flex-shrink-0 object-cover"
+                  className="w-20 h-20 rounded-[100%] flex-shrink-0 object-cover"
                   alt=""
                 />
                 <p className="text-center font-bold">{friend.name}</p>

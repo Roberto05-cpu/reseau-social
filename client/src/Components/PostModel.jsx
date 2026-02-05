@@ -8,6 +8,8 @@ import {
   Bookmark,
 } from "lucide-react";
 import axios from "axios";
+import { useContext } from "react";
+import { ReseauContext } from "../Context/ReseauContext";
 
 const PostModel = ({ post , onUpdate, onDelete}) => {
   const [showComments, setShowComments] = useState(false);
@@ -41,6 +43,8 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
     post.posterId &&
     post.posterId._id &&
     post.posterId._id.toString() === currentUserId.toString();
+  
+  const {getUnreadNotifCount} = useContext(ReseauContext)
 
   const toggleComments = () => {
     setShowComments((prev) => !prev);
@@ -58,6 +62,7 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
       const added = res.data.comment;
       // attempt to use populated commenter if available
       if (added) setComments((prev) => [...prev, added]);
+      getUnreadNotifCount()
       setNewComment("");
     } catch (err) {
       console.error("Erreur lors de l ajout du commentaire", err);
@@ -75,6 +80,7 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
       );
       setIsLiked(true);
       setLikeCount((prev) => prev + 1);
+      getUnreadNotifCount()
     } catch (error) {
       console.error("Erreur lors de l ajout du like", error);
       alert("Impossible d'ajouter le like");
@@ -138,7 +144,7 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
   };
 
   return (
-    <div className="bg-white w-[400px] max-h-[600px] overflow-y-auto rounded-[10px] p-4">
+    <div className="bg-white w-[400px] max-h-screen overflow-y-auto rounded-[10px] p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img

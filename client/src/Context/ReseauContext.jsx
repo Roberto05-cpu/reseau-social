@@ -8,6 +8,9 @@ const ReseauContextProvider = ({ children }) => {
   const [allPosts, setAllPosts] = useState([]);
   const [friends, setFriends] = useState([]);
 
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [notifs, setNotifs] = useState([])
+
   const token = sessionStorage.getItem("token");
   const [user, setUser] = useState(() => {
     try {
@@ -17,10 +20,51 @@ const ReseauContextProvider = ({ children }) => {
     }
   });
 
-  useEffect(() => {
-    const s = sessionStorage.getItem("user");
-    if (s) setUser(JSON.parse(s));
-  }, []);
+  // useEffect(() => {
+  //   const s = sessionStorage.getItem("user");
+  //   if (s) setUser(JSON.parse(s));
+  // }, []);
+
+  const getMyNotifs = async () => {
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/notifs",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setNotifs(res.data.notifs || []);
+    console.log(notifs)
+
+  } catch (e) {
+    console.error("Erreur notifs", e);
+  }
+};
+
+  const getUnreadNotifCount = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/notifs/unread-count",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setUnreadNotifCount(res.data.count || 0);
+    } catch (error) {
+      console.error("Erreur unread notif count", error);
+    }
+  };
+
+  const markAllNotifAsRead = async () => {
+  try {
+    await axios.patch(
+      "http://localhost:5000/api/notifs/read-all",
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setNotifs(prev =>
+      prev.map(n => ({ ...n, isRead: true }))
+    );
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   const getAllPosts = async () => {
     try {
@@ -34,7 +78,9 @@ const ReseauContextProvider = ({ children }) => {
   };
 
   const updatePostInState = (updatedPost) => {
-    setAllPosts((prev) => prev.map((p) => (p._id === updatedPost._id ? updatedPost : p)));
+    setAllPosts((prev) =>
+      prev.map((p) => (p._id === updatedPost._id ? updatedPost : p)),
+    );
   };
 
   const removePostFromState = (postId) => {
@@ -71,6 +117,12 @@ const ReseauContextProvider = ({ children }) => {
     }
   };
 
+  useEffect(() => {
+    if (token) {
+      getUnreadNotifCount();
+    }
+  }, [token]);
+
   const value = {
     openModal,
     setOpenModal,
@@ -80,14 +132,23 @@ const ReseauContextProvider = ({ children }) => {
     setFriends,
     token,
     user,
+    setUser,
     refreshUserFromSession,
     getAllPosts,
     getFriends,
     updatePostInState,
     removePostFromState,
+    unreadNotifCount,
+    setUnreadNotifCount,
+    getUnreadNotifCount,
+    notifs,
+    getMyNotifs,
+    markAllNotifAsRead
   };
 
-  return <ReseauContext.Provider value={value}>{children}</ReseauContext.Provider>;
+  return (
+    <ReseauContext.Provider value={value}>{children}</ReseauContext.Provider>
+  );
 };
 
 export default ReseauContextProvider;
