@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import batman from "../assets/batman.jpg";
 import { UserCircle } from "lucide-react";
 import axios from "axios";
 import defautuser from "../assets/defautuser.png";

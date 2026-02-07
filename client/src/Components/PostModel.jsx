@@ -11,7 +11,7 @@ import axios from "axios";
 import { useContext } from "react";
 import { ReseauContext } from "../Context/ReseauContext";
 
-const PostModel = ({ post , onUpdate, onDelete}) => {
+const PostModel = ({ post, onUpdate, onDelete }) => {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState(post.comments || []);
   const [newComment, setNewComment] = useState("");
@@ -43,8 +43,8 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
     post.posterId &&
     post.posterId._id &&
     post.posterId._id.toString() === currentUserId.toString();
-  
-  const {getUnreadNotifCount} = useContext(ReseauContext)
+
+  const { getUnreadNotifCount } = useContext(ReseauContext);
 
   const toggleComments = () => {
     setShowComments((prev) => !prev);
@@ -58,11 +58,10 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
         { text: newComment },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      // API returns the new comment and the updated post
       const added = res.data.comment;
-      // attempt to use populated commenter if available
+      
       if (added) setComments((prev) => [...prev, added]);
-      getUnreadNotifCount()
+      getUnreadNotifCount();
       setNewComment("");
     } catch (err) {
       console.error("Erreur lors de l ajout du commentaire", err);
@@ -80,7 +79,7 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
       );
       setIsLiked(true);
       setLikeCount((prev) => prev + 1);
-      getUnreadNotifCount()
+      getUnreadNotifCount();
     } catch (error) {
       console.error("Erreur lors de l ajout du like", error);
       alert("Impossible d'ajouter le like");
@@ -115,14 +114,14 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
   const updatePost = async () => {
     try {
       const res = await axios.put(
-      `http://localhost:5000/api/posts/${post._id}`,
-      { message },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+        `http://localhost:5000/api/posts/${post._id}`,
+        { message },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
-    onUpdate(res.data.post); // 🔥 met à jour le parent
-    alert("Post mis à jour avec succès !");
-    setIsClickToEdit(false);
+      onUpdate(res.data.post); // 🔥 met à jour le parent
+      alert("Post mis à jour avec succès !");
+      setIsClickToEdit(false);
     } catch (error) {
       console.error("Erreur lors de la mise à jour du post", error);
       alert("Impossible de mettre à jour le post");
@@ -131,10 +130,9 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
 
   const deletePost = async () => {
     try {
-      await axios.delete(
-        `http://localhost:5000/api/posts/${post._id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await axios.delete(`http://localhost:5000/api/posts/${post._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       alert("Post supprimé avec succès !");
       onDelete(post._id);
     } catch (error) {
@@ -159,10 +157,10 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
         </div>
         <div className="relative">
           {isOwner && (
-          <MoreHorizontal
-            className="cursor-pointer"
-            onClick={() => setShowOptions((prev) => !prev)}
-          />
+            <MoreHorizontal
+              className="cursor-pointer"
+              onClick={() => setShowOptions((prev) => !prev)}
+            />
           )}
           {showOptions && (
             <div className="absolute right-0 top-full mt-2 w-36 bg-white border rounded-lg shadow-lg z-50">
@@ -204,6 +202,16 @@ const PostModel = ({ post , onUpdate, onDelete}) => {
           src={`http://localhost:5000${post.picture}`}
           className="mx-auto w-[390px] h-[390px] object-cover rounded-[5px]"
           alt=""
+        />
+      )}
+      {post.video && (
+        <video
+          src={`http://localhost:5000${post.video}`}
+          className="mx-auto w-[390px] h-[390px] object-cover rounded-[5px]"
+          controls
+          autoPlay
+          loop
+          muted
         />
       )}
       <div className="mt-5 flex justify-between items-center">

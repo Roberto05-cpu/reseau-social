@@ -1,14 +1,12 @@
 import React from "react";
-import { Check, MoreHorizontal, BadgeCheck } from "lucide-react";
-import batman from "../assets/batman.jpg";
-import axios from "axios";
+import { MoreHorizontal, BadgeCheck } from "lucide-react";
 import { useContext } from "react";
 import { ReseauContext } from "../Context/ReseauContext";
 import { useEffect } from "react";
 import { useState } from "react";
 
 const Notifications = () => {
-  const { token, notifs, getMyNotifs } = useContext(ReseauContext);
+  const { notifs, getMyNotifs , markAllNotifAsRead, allNotifAsRead} = useContext(ReseauContext);
   const [activeTab, setActiveTab] = useState("all");
 
   const filteredNotifs = notifs.filter((notif) => {
@@ -26,9 +24,9 @@ const Notifications = () => {
         <h1 className="text-3xl font-bold">Vos notifications</h1>
         <div className="flex items-center gap-1">
           <div className="flex">
-            <BadgeCheck />
+            <BadgeCheck onClick={() => markAllNotifAsRead()} className={`${allNotifAsRead ? "text-blue-500" : ""}`} />
           </div>
-          <p>Marqer tout comme Non lu</p>
+          <p>Marqer tout comme lu</p>
         </div>
       </div>
       <ul className="mt-5 flex items-center gap-4">
@@ -74,8 +72,8 @@ const Notifications = () => {
                   <p className="font-bold">
                     {notif.senderId.name}{" "}
                     {notif.type === "follow" && "s’est abonné à vous"}
-                    {notif.type === "like" && "a aimé votre publication"}
-                    {notif.type === "comment" && "a commenté votre publication"}
+                    {notif.type === "like" && `a aimé votre publication : ${notif.postId.message}`}
+                    {notif.type === "comment" && `a commenté votre publication : ${notif.postId.message}`}
                   </p>
                   <span className="text-sm text-gray-500">
                     {new Date(notif.createdAt).toLocaleString()}

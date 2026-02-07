@@ -25,6 +25,8 @@ app.use(
 app.use('/api/users', require('./Routes/userRoute'))
 app.use('/api/posts', require('./Routes/postRoute'))
 app.use('/api/notifs', require('./Routes/notifRoute'))
+app.use('/api/chats', require('./Routes/chatRoute'))
+app.use('/api/messages', require('./Routes/messageRoute'))
 
 // connecter la base de donnees
 connectDB()
@@ -55,16 +57,25 @@ io.on("connection", (socket) => {
 
   socket.on("join", (userId) => {
     onlineUsers.set(userId.toString(), socket.id);
+    io.emit("onlineUsers", Array.from(onlineUsers.keys()));
     console.log("👤 User en ligne :", userId);
   });
 
+   // Note: sendMessage event handling is done in messageController on POST /api/messages
+  // This ensures messages are saved to DB before being emitted to real-time clients
+
   socket.on("disconnect", () => {
+    let removed = null;
     for (let [userId, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
         onlineUsers.delete(userId);
+        removed = userId;
         console.log("🔴 User déconnecté :", userId);
         break;
       }
+    }
+    if (removed !== null) {
+      io.emit("onlineUsers", Array.from(onlineUsers.keys()));
     }
   });
 });

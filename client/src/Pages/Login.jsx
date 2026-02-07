@@ -23,11 +23,11 @@ const Login = () => {
       );
 
       if (res.data.success) {
-        // 🔐 stocker token et user
+        // stocker token et user
         sessionStorage.setItem("token", res.data.token);
         sessionStorage.setItem("user", JSON.stringify(res.data.user));
 
-        // ➜ redirection vers home
+        // redirection vers home
         alert(res.data.message);
         navigate("/home");
       }

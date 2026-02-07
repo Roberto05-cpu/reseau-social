@@ -9,6 +9,7 @@ import Settings from "./Pages/Settings";
 import PrivateRoutes from "./Components/PrivateRoutes";
 import Friends from "./Pages/Friends";
 import Messages from "./Pages/Messages";
+import Chat from "./Pages/Chat";
 import Notifications from "./Pages/Notifications";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
             <Route path="setting" element={<Settings />} />
             <Route path="friends" element={<Friends />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="chat/:chatId" element={<Chat />} />
             <Route path="notifications" element={<Notifications />} />
           </Route>
         </Route>

@@ -1,30 +1,25 @@
-import {
-  Clock,
-  MessageCircle,
-  Search,
-  MoreHorizontal,
-  Heart,
-  Send,
-  Bookmark,
-  Bell,
-  PlusCircle,
-} from "lucide-react";
-import React, { useContext, useEffect, useState } from "react";
-import watch from "../assets/watch.jpg";
+import { PlusCircle } from "lucide-react";
+import React, { useContext, useEffect } from "react";
 import HeadComp from "../Components/HeadComp";
 import { Link } from "react-router-dom";
 import CreatePost from "../Components/CreatePost";
-import axios from "axios";
 import PostModel from "../Components/PostModel";
 import defautuser from "../assets/defautuser.png";
 import { ReseauContext } from "../Context/ReseauContext";
-import { io } from "socket.io-client";
-
-let socket
+import { socket } from "../socket";
 
 const Feed = () => {
-
-  const {allPosts, getAllPosts, friends, getFriends, setOpenModal, openModal, updatePostInState, removePostFromState} = useContext(ReseauContext);
+  const {
+    allPosts,
+    getAllPosts,
+    friends,
+    getFriends,
+    setOpenModal,
+    openModal,
+    updatePostInState,
+    removePostFromState,
+    onlineUsers,
+  } = useContext(ReseauContext);
 
   const user = JSON.parse(sessionStorage.getItem("user"));
 
@@ -34,19 +29,14 @@ const Feed = () => {
 
     if (!user) return;
 
-    // connecter au serveur Socket.IO
-    socket = io("http://localhost:5000");
-
-    // dire au serveur quel user est connecté
-    socket.emit("join", user._id);
-
-    // optionnel : écouter des événements temps réel
+    // le socket global est initialisé dans `client/src/socket.js`
+    // le contexte `ReseauContext` émettra le `join` quand l'utilisateur est disponible
     socket.on("connect", () => {
-      console.log("🔗 Connecté au serveur Socket.IO, id :", socket.id);
+      console.log(" Connecté au serveur Socket.IO (global), id :", socket.id);
     });
 
     return () => {
-      socket.disconnect();
+      socket.off("connect");
     };
   }, []);
 
@@ -65,7 +55,7 @@ const Feed = () => {
             <p className="text-gray-500">Aucun ami à afficher.</p>
           ) : (
             friends.map((friend, i) => (
-              <div key={i} className="flex-shrink-0">
+              <div key={i} className="flex-shrink-0 relative">
                 <img
                   src={
                     friend.avatar
@@ -75,6 +65,9 @@ const Feed = () => {
                   className="w-20 h-20 rounded-[100%] flex-shrink-0 object-cover"
                   alt=""
                 />
+                {onlineUsers.has(friend._id) && (
+                  <span className="absolute bottom-6 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
+                )}
                 <p className="text-center font-bold">{friend.name}</p>
               </div>
             ))
@@ -85,7 +78,12 @@ const Feed = () => {
         <h2 className="font-bold text-2xl">Feed</h2>
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 justify-center">
           {allPosts.map((post, i) => (
-            <PostModel key={i} post={post} onUpdate={updatePostInState} onDelete={removePostFromState} />
+            <PostModel
+              key={i}
+              post={post}
+              onUpdate={updatePostInState}
+              onDelete={removePostFromState}
+            />
           ))}
         </div>
       </div>

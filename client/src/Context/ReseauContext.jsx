@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import { socket } from "../socket";
 
 export const ReseauContext = createContext();
 
@@ -9,7 +10,12 @@ const ReseauContextProvider = ({ children }) => {
   const [friends, setFriends] = useState([]);
 
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
-  const [notifs, setNotifs] = useState([])
+  const [notifs, setNotifs] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [allNotifAsRead, setAllNotifAsRead] = useState(false)
+
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [unreadPerChat, setUnreadPerChat] = useState({});
 
   const token = sessionStorage.getItem("token");
   const [user, setUser] = useState(() => {
@@ -25,19 +31,37 @@ const ReseauContextProvider = ({ children }) => {
   //   if (s) setUser(JSON.parse(s));
   // }, []);
 
-  const getMyNotifs = async () => {
-  try {
-    const res = await axios.get(
-      "http://localhost:5000/api/notifs",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setNotifs(res.data.notifs || []);
-    console.log(notifs)
+  // écouter les users online via socket
+  useEffect(() => {
+    if (!token) return;
 
-  } catch (e) {
-    console.error("Erreur notifs", e);
-  }
-};
+    socket.on("onlineUsers", (users) => {
+      // users = array des userIds en ligne
+      setOnlineUsers(new Set(users));
+    });
+
+    return () => {
+      socket.off("onlineUsers");
+    };
+  }, [token]);
+
+  // informer le serveur que cet utilisateur est en ligne
+  useEffect(() => {
+    if (!token || !user) return;
+    socket.emit("join", user._id);
+  }, [token, user]);
+
+  const getMyNotifs = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/notifs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifs(res.data.notifs || []);
+      console.log(notifs);
+    } catch (e) {
+      console.error("Erreur notifs", e);
+    }
+  };
 
   const getUnreadNotifCount = async () => {
     try {
@@ -52,19 +76,43 @@ const ReseauContextProvider = ({ children }) => {
   };
 
   const markAllNotifAsRead = async () => {
-  try {
-    await axios.patch(
-      "http://localhost:5000/api/notifs/read-all",
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    setNotifs(prev =>
-      prev.map(n => ({ ...n, isRead: true }))
-    );
-  } catch (e) {
-    console.error(e);
-  }
-};
+    try {
+      await axios.patch(
+        "http://localhost:5000/api/notifs/read-all",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setAllNotifAsRead(true)
+      alert("Toutes vos notifs ont ete marques comme lues")
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const getUnreadMessageCount = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/messages/unread-count",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setUnreadMessageCount(res.data.unreadCount || 0);
+    } catch (error) {
+      console.error("Erreur unread message count", error);
+    }
+  };
+
+  const getUnreadPerChat = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/messages/unread-per-chat",
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setUnreadPerChat(res.data.unreadPerChat || {});
+    } catch (error) {
+      console.error("Erreur unread per chat", error);
+    }
+  };
 
   const getAllPosts = async () => {
     try {
@@ -120,6 +168,8 @@ const ReseauContextProvider = ({ children }) => {
   useEffect(() => {
     if (token) {
       getUnreadNotifCount();
+      getUnreadMessageCount();
+      getUnreadPerChat();
     }
   }, [token]);
 
@@ -143,7 +193,15 @@ const ReseauContextProvider = ({ children }) => {
     getUnreadNotifCount,
     notifs,
     getMyNotifs,
-    markAllNotifAsRead
+    markAllNotifAsRead,
+    onlineUsers,
+    allNotifAsRead,
+    unreadMessageCount,
+    setUnreadMessageCount,
+    getUnreadMessageCount,
+    unreadPerChat,
+    setUnreadPerChat,
+    getUnreadPerChat,
   };
 
   return (

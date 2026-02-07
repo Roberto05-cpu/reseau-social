@@ -5,7 +5,7 @@ import { useContext } from "react";
 import { ReseauContext } from "../Context/ReseauContext";
 
 const HeadComp = ({ setOpenModal }) => {
-  const { unreadNotifCount } = useContext(ReseauContext);
+  const { unreadNotifCount, unreadMessageCount } = useContext(ReseauContext);
 
   return (
     <div className="flex items-center justify-between">
@@ -38,9 +38,23 @@ const HeadComp = ({ setOpenModal }) => {
             </span>
           )}
         </div>
-        <Link to="/home/messages">
-          <MessageCircle size={18} />
-        </Link>
+        <div className="relative">
+          <Link to="/home/messages">
+            <MessageCircle size={18} />
+          </Link>
+          {unreadMessageCount > 0 && (
+            <span
+              className="
+          absolute -top-3 -right-1
+          bg-blue-500 text-white text-xs
+          w-5 h-5 flex items-center justify-center
+          rounded-[50%]
+        "
+            >
+              {unreadMessageCount}
+            </span>
+          )}
+        </div>
         <button
           onClick={() => setOpenModal(true)}
           className="py-2 px-5 bg-red-400 text-white font-bold rounded-full"

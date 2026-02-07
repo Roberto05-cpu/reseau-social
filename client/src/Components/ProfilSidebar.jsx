@@ -11,7 +11,7 @@ const ProfilSidebar = () => {
   const location = useLocation();
   const current = location.pathname;
 
-  const { user, setUser, token } = useContext(ReseauContext);
+  const { user, setUser, token, onlineUsers } = useContext(ReseauContext);
   const [userPosts, setUserPosts] = useState([]);
 
   // Initialisation socket une seule fois
@@ -21,25 +21,42 @@ const ProfilSidebar = () => {
     socket.emit("join", user._id);
 
     socket.on("updateFollowers", ({ userId, followersCount }) => {
+      console.log(
+        "socket event updateFollowers received:",
+        userId,
+        followersCount,
+      );
       if (userId === user._id) {
-        setUser((prev) => ({
-          ...prev,
-          followersCount, // ajouter un champ temporaire pour le compteur
-        }));
+        const updated = { ...user, followersCount };
+        setUser(updated);
+        try {
+          sessionStorage.setItem("user", JSON.stringify(updated));
+        } catch {
+          // 
+        }
       }
     });
 
     socket.on("updateFollowing", ({ userId, followingCount }) => {
+      console.log(
+        "socket event updateFollowing received:",
+        userId,
+        followingCount,
+      );
       if (userId === user._id) {
-        setUser((prev) => ({
-          ...prev,
-          followingCount,
-        }));
+        const updated = { ...user, followingCount };
+        setUser(updated);
+        try {
+          sessionStorage.setItem("user", JSON.stringify(updated));
+        } catch {
+          //
+        }
       }
     });
 
     return () => {
-      socket.disconnect();
+      socket.off("updateFollowers");
+      socket.off("updateFollowing");
     };
   }, [user]);
 
@@ -78,15 +95,20 @@ const ProfilSidebar = () => {
 
       {/* Avatar et infos */}
       <div className="mt-6 flex flex-col items-center gap-1 justify-center">
-        {user?.avatar ? (
-          <img
-            src={`http://localhost:5000${user.avatar}`}
-            className="w-20 h-20 rounded-full object-cover"
-            alt=""
-          />
-        ) : (
-          <User size={80} />
-        )}
+        <div className="relative">
+          {user?.avatar ? (
+            <img
+              src={`http://localhost:5000${user.avatar}`}
+              className="w-20 h-20 rounded-full object-cover"
+              alt=""
+            />
+          ) : (
+            <User size={80} />
+          )}
+          {onlineUsers.has(user._id) && (
+            <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
+          )}
+        </div>
         <div className="flex flex-col items-center justify-center">
           <h3 className="font-bold text-[17px]">{user?.name}</h3>
           <p className="text-[14px] opacity-80">{user?.email}</p>
@@ -98,9 +120,13 @@ const ProfilSidebar = () => {
         <div className="flex items-center justify-center gap-9">
           <p className="font-bold">{userPosts.length}</p>
           <div>|</div>
-          <p className="font-bold">{user.followersCount ?? user.followers.length ?? 0}</p>
+          <p className="font-bold">
+            {user.followersCount ?? user.followers.length ?? 0}
+          </p>
           <div>|</div>
-          <p className="font-bold">{user.followingCount ?? user.following.length ?? 0}</p>
+          <p className="font-bold">
+            {user.followingCount ?? user.following.length ?? 0}
+          </p>
         </div>
         <div className="w-full flex items-center justify-center gap-10 mt-1">
           <p>Posts</p>

@@ -1,3 +1,5 @@
 client/node_modules
 serveur/.env
 serveur/node_modules
+serveur/upload/
+client/src/assets/
